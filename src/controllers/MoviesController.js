@@ -31,9 +31,11 @@ class MoviesController {
 
     const note = await knex("movies").where({ id }).first();
     const tags = await knex("tags").where({ note_id: id }).orderBy("name");
+    const userInfo = await knex("users").select("name", "avatar").where({ id: note.user_id}).first();
 
     return response.json({
       ...note,
+      userInfo,
       tags,
     });
   }
@@ -44,6 +46,17 @@ class MoviesController {
     await knex("movies").where({ id }).delete();
 
     return response.json();
+  }
+
+  async update(request, response) {
+    const { id, user_id } = request.params;
+    const { title, description, rating } = request.body;
+
+
+    const movie = await knex("movies").where({id}).first();
+    const movieRating = await knex("tags").where({note_id: id});
+
+    return response.json({movie,movieRating}, 201);
   }
 
   async index(request, response) {
@@ -62,6 +75,7 @@ class MoviesController {
         .whereLike("movies.title", `%${title}%`)
         .whereIn("name", filterTags)
         .innerJoin("movies", "movies.id", "tags.note_id")
+        .groupBy("movies.id")
         .orderBy("movies.title");
     } else {
       movies = await knex("movies")
@@ -71,7 +85,7 @@ class MoviesController {
     }
 
     return response.json(movies);
-  }
+  } 
 }
 
 module.exports = MoviesController;

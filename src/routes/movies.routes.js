@@ -12,6 +12,7 @@ moviesRoutes.use(ensureAuthenticated);
 moviesRoutes.post("/", moviesController.create);
 moviesRoutes.get("/:id", moviesController.show);
 moviesRoutes.delete("/:id", moviesController.delete);
+moviesRoutes.put("/:id", moviesController.update);
 moviesRoutes.get("/", moviesController.index);
 
 module.exports = moviesRoutes;
