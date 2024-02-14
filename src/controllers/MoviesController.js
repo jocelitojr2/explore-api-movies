@@ -50,20 +50,52 @@ class MoviesController {
   }
 
   async update(request, response) {
-    const { movie_id, user_id } = request.query;
+    const { movie_id, user_id } = request.params;
     const { title, description, rating, tags } = request.body;
 
-    console.log(movie_id, user_id);
-    console.log(user_id, title, description, rating, tags);
-
     const movie = await knex("movies").where({id : movie_id});
-    const movieRating = await knex("tags").where({note_id: movie_id});
+    if (!movie_id) {
+      throw new AppError("O ID do filme não foi fornecido.");
+    }
 
     if (!movie || movie.length <= 0) {
       throw new AppError("Filme não encontrado");
     }
 
-    return response.json({movie,movieRating});
+    if (!title) {
+      throw new AppError("Você precisa informar o título do filme");
+    }
+
+    if (rating <= 0 || rating >= 6) {
+      throw new AppError("A nota deve estar entre 1 e 5");
+    }
+    
+    // Atualiza o filme
+    await knex("movies").where({ id: movie_id }).update({
+      title: title,
+      description: description,
+      rating: rating,
+    });
+
+    // Atualizar tags
+    // Primeiro, remover as tags existentes para esse filme
+    await knex("tags").where({ note_id: movie_id }).del();
+
+    // Segundo, inserir as novas tags
+    if (tags && tags.length > 0) {
+        const tagsData = tags.map(tag => ({
+            note_id: movie_id,
+            user_id: user_id,
+            name: tag,
+        }));
+        await knex("tags").insert(tagsData);
+    }
+
+    // Retornar o filme atualizado e suas tags
+    const updatedMovie = await knex("movies").where({ id: movie_id }).first();
+    const updatedTags = await knex("tags").where({ note_id: movie_id });
+
+    return response.json({ movie: updatedMovie, tags: updatedTags });
   }
 
   async index(request, response) {
