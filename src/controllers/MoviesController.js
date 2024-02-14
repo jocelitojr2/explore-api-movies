@@ -1,5 +1,6 @@
 const { response } = require("express");
 const knex = require("../database/knex");
+const AppError = require("../utils/AppError");
 
 class MoviesController {
   async create(request, response) {
@@ -49,14 +50,20 @@ class MoviesController {
   }
 
   async update(request, response) {
-    const { id, user_id } = request.params;
-    const { title, description, rating } = request.body;
+    const { movie_id, user_id } = request.query;
+    const { title, description, rating, tags } = request.body;
 
+    console.log(movie_id, user_id);
+    console.log(user_id, title, description, rating, tags);
 
-    const movie = await knex("movies").where({id}).first();
-    const movieRating = await knex("tags").where({note_id: id});
+    const movie = await knex("movies").where({id : movie_id});
+    const movieRating = await knex("tags").where({note_id: movie_id});
 
-    return response.json({movie,movieRating}, 201);
+    if (!movie || movie.length <= 0) {
+      throw new AppError("Filme não encontrado");
+    }
+
+    return response.json({movie,movieRating});
   }
 
   async index(request, response) {
